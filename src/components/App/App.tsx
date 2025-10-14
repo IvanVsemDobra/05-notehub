@@ -1,35 +1,34 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import css from "./App.module.css";
+import NoteFormModal from "../Modal/NoteFormModal";
+import { createNote } from "../../services/noteService";
+import type { NoteFormData } from "../../types/note";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateNote = async (values: NoteFormData) => {
+    try {
+      const newNote = await createNote(values);
+      console.log("Створено нотатку:", newNote);
+    } catch (error) {
+      console.error("Помилка при створенні нотатки:", error);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className={css.app}>
+      <header className={css.toolbar}>
+        <button className={css.button} onClick={() => setIsModalOpen(true)}>
+          Create note +
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+      </header>
 
-export default App
+      <NoteFormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateNote}
+      />
+    </div>
+  );
+}
