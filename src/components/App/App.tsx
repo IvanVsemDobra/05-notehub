@@ -1,25 +1,29 @@
 import { useEffect, useState } from "react";
 import css from "./App.module.css";
 import toast from "react-hot-toast";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { NotesHttpResponse } from "../../services/noteService";
 import { fetchNotes } from "../../services/noteService";
+import { useDebounce } from "../../hooks/useDebounce";
 import Pagination from "../Pagination/Pagination";
 import NoteList from "../NoteList/NoteList";
 import SearchBox from "../SearchBox/SearchBox";
-import Loader from "../Loader/Loader";
-import ErrorMessage from "../ErrorMessage/ErrorMessage";
-import { useQueryClient } from "@tanstack/react-query";
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
-import { useDebounce } from "use-debounce";
+import Loader from "../Loader/Loader"; // якщо маєш
+import ErrorMessage from "../ErrorMessage/ErrorMessage"; // якщо маєш
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchNote, setSearchNote] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const queryClient = useQueryClient();
-  const [debouncedSearch] = useDebounce(searchNote, 500);
+  const debouncedSearch = useDebounce(searchNote, 500);
 
   const { data, isLoading, isError, isSuccess } = useQuery<NotesHttpResponse>({
     queryKey: ["notes", currentPage, debouncedSearch],
@@ -33,10 +37,13 @@ const App = () => {
   });
 
   useEffect(() => {
-    isSuccess &&
+    if (
+      isSuccess &&
       debouncedSearch.trim() !== "" &&
-      data?.notes.length === 0 &&
+      data?.notes.length === 0
+    ) {
       toast.error("No notes found for your search.", { id: "no-results" });
+    }
   }, [isSuccess, data?.notes, debouncedSearch]);
 
   const handleChange = (query: string) => {
@@ -49,12 +56,8 @@ const App = () => {
     queryClient.invalidateQueries({ queryKey: ["notes"] });
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   return (
     <div className={css.app}>
@@ -68,14 +71,17 @@ const App = () => {
             setCurrentPage={setCurrentPage}
           />
         )}
+
         <button onClick={openModal} className={css.button}>
           Create note +
         </button>
-        {/* Кнопка створення нотатки */}
       </header>
+
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
-      {data?.notes && data.notes.length > 0 && <NoteList notes={data!.notes} />}
+
+      {data?.notes && data.notes.length > 0 && <NoteList notes={data.notes} />}
+
       {isModalOpen && (
         <Modal onClose={closeModal}>
           <NoteForm onCancel={closeModal} onCreated={handleCreated} />
@@ -84,4 +90,5 @@ const App = () => {
     </div>
   );
 };
+
 export default App;
