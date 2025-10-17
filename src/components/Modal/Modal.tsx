@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react";
 interface ModalProps {
   children: ReactNode;
   onClose: () => void;
+  title?: string;
 }
 
 const Modal = ({ children, onClose }: ModalProps) => {
