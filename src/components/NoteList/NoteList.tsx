@@ -1,55 +1,57 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import type { Note } from "../../types/note";
 import css from "./NoteList.module.css";
+import { useMutation } from "@tanstack/react-query";
 import { deleteNote } from "../../services/noteService";
-
-import Modal from "../Modal/Modal";
-
-import { useModal } from "../../hooks/useModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface NoteListProps {
   notes: Note[];
-  onSelectNote: (note: Note) => void;
 }
 
-export default function NoteList({ notes, onSelectNote }: NoteListProps) {
-  const [isOpen, open, close] = useModal();
-
+const NoteList = ({ notes }: NoteListProps) => {
   const queryClient = useQueryClient();
 
-  const mutaion = useMutation({
-    mutationFn: deleteNote,
-    // mutationFn: (id: Node["id"]) => deleteNode(id),
+  const { mutate, isPending } = useMutation({
+    mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notes"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      toast.success("Note deleted");
+    },
+    onError() {
+      toast.error("Something wrong.", { id: "delete-fail" });
     },
   });
 
+  const handleDelete = (id: string) => {
+    mutate(id);
+  };
+
+  if (notes.length === 0) {
+    return null;
+  }
   return (
-    <>
-      <ul className={css.list}>
-        {notes.map((note) => (
-          <li className={css.listItem} key={note.id}>
+    <ul className={css.list}>
+      {notes.map((note: Note) => {
+        return (
+          <li key={note.id} className={css.listItem}>
             <h2 className={css.title}>{note.title}</h2>
             <p className={css.content}>{note.content}</p>
             <div className={css.footer}>
-              <button className={css.edit} onClick={() => onSelectNote(note)}>
-                Edit
-              </button>
+              <span className={css.tag}>{note.tag}</span>
               <button
-                className={css.delete}
-                onClick={() => mutaion.mutate(note.id)}
+                className={css.button}
+                onClick={() => handleDelete(note.id)}
+                disabled={isPending}
               >
                 Delete
               </button>
-              <button onClick={open}>Show Details</button>
             </div>
           </li>
-        ))}
-      </ul>
-      {isOpen && <Modal onClose={close}>Details INFO</Modal>}
-    </>
+        );
+      })}
+    </ul>
   );
-}
+};
+
+export default NoteList;

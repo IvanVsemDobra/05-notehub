@@ -1,4 +1,4 @@
-import NoteForm from "../components/NoteForm/Note Form";
+import NoteForm from "../components/NoteForm/NoteForm";
 import { createNote } from "../services/noteService";
 import type { NoteFormData } from "../types/note";
 

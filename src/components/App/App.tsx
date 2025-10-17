@@ -1,34 +1,87 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import css from "./App.module.css";
-import NoteFormModal from "../Modal/NoteFormModal";
-import { createNote } from "../../services/noteService";
-import type { NoteFormData } from "../../types/note";
+import toast from "react-hot-toast";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { NotesHttpResponse } from "../../services/noteService";
+import { fetchNotes } from "../../services/noteService";
+import Pagination from "../Pagination/Pagination";
+import NoteList from "../NoteList/NoteList";
+import SearchBox from "../SearchBox/SearchBox";
+import Loader from "../Loader/Loader";
+import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import { useQueryClient } from "@tanstack/react-query";
+import Modal from "../Modal/Modal";
+import NoteForm from "../NoteForm/NoteForm";
+import { useDebounce } from "use-debounce";
 
-export default function App() {
+const App = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchNote, setSearchNote] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [debouncedSearch] = useDebounce(searchNote, 500);
 
-  const handleCreateNote = async (values: NoteFormData) => {
-    try {
-      const newNote = await createNote(values);
-      console.log("Створено нотатку:", newNote);
-    } catch (error) {
-      console.error("Помилка при створенні нотатки:", error);
-    }
+  const { data, isLoading, isError, isSuccess } = useQuery<NotesHttpResponse>({
+    queryKey: ["notes", currentPage, debouncedSearch],
+    queryFn: () =>
+      fetchNotes({
+        page: currentPage,
+        perPage: 12,
+        search: debouncedSearch.trim(),
+      }),
+    placeholderData: keepPreviousData,
+  });
+
+  useEffect(() => {
+    isSuccess &&
+      debouncedSearch.trim() !== "" &&
+      data?.notes.length === 0 &&
+      toast.error("No notes found for your search.", { id: "no-results" });
+  }, [isSuccess, data?.notes, debouncedSearch]);
+
+  const handleChange = (query: string) => {
+    setCurrentPage(1);
+    setSearchNote(query);
+  };
+
+  const handleCreated = () => {
+    closeModal();
+    queryClient.invalidateQueries({ queryKey: ["notes"] });
+  };
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <button className={css.button} onClick={() => setIsModalOpen(true)}>
+        <SearchBox onChange={handleChange} />
+
+        {isSuccess && !isError && data?.totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={data?.totalPages || 1}
+            setCurrentPage={setCurrentPage}
+          />
+        )}
+        <button onClick={openModal} className={css.button}>
           Create note +
         </button>
+        {/* Кнопка створення нотатки */}
       </header>
-
-      <NoteFormModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateNote}
-      />
+      {isLoading && <Loader />}
+      {isError && <ErrorMessage />}
+      {data?.notes && data.notes.length > 0 && <NoteList notes={data!.notes} />}
+      {isModalOpen && (
+        <Modal onClose={closeModal}>
+          <NoteForm onCancel={closeModal} onCreated={handleCreated} />
+        </Modal>
+      )}
     </div>
   );
-}
+};
+export default App;
