@@ -3,8 +3,6 @@ import type { NewNote, Note } from "../types/note";
 
 export interface NotesHttpResponse {
   notes: Note[];
-  page: number;
-  perPage: number;
   totalPages: number;
 }
 
@@ -32,10 +30,9 @@ export const fetchNotes = async ({
       headers: { Authorization: `Bearer ${myKey}` },
     }
   );
-  const data = response.data;
-
-  return data;
+  return response.data;
 };
+
 export const createNote = async (newNote: NewNote): Promise<Note> => {
   const response = await axios.post<Note>(
     `https://notehub-public.goit.study/api/notes`,
@@ -44,10 +41,9 @@ export const createNote = async (newNote: NewNote): Promise<Note> => {
       headers: { Authorization: `Bearer ${myKey}` },
     }
   );
-  const data = response.data;
-
-  return data;
+  return response.data;
 };
+
 export const deleteNote = async (id: string): Promise<Note> => {
   const response = await axios.delete<Note>(
     `https://notehub-public.goit.study/api/notes/${id}`,
@@ -55,7 +51,5 @@ export const deleteNote = async (id: string): Promise<Note> => {
       headers: { Authorization: `Bearer ${myKey}` },
     }
   );
-  const data = response.data;
-
-  return data;
+  return response.data;
 };

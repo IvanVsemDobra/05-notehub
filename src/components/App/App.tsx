@@ -14,8 +14,8 @@ import NoteList from "../NoteList/NoteList";
 import SearchBox from "../SearchBox/SearchBox";
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
-import Loader from "../Loader/Loader"; // якщо маєш
-import ErrorMessage from "../ErrorMessage/ErrorMessage"; // якщо маєш
+import Loader from "../Loader/Loader";
+import ErrorMessage from "../ErrorMessage/ErrorMessage";
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
